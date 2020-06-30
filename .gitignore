@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# 
+/build
+/dist
+/MANIFEST
+/*.egg-info
+/openslide/_convert*.so
+*.pyc

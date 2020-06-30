@@ -1,0 +1,155 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Slide Viewer</title>
+<meta name="viewport" content="user-scalable=no">
+<header>
+    <link rel="stylesheet" type="text/css" href="static/css/main.css">
+</header>
+<body>
+    <div id="images">
+        <h1>View</h1>
+        <div class="current-slide">
+            <a class="load-slide" href="#" data-url="{{ slide_url }}"
+                    data-mpp="{{ slide_mpp }}">Slide</a>
+        </div>
+        <h2>Associated images</h2>
+        {% if associated %}
+            <ul class="associated-images">
+                {% for name in associated|sort %}
+                    <li><a class="load-slide" href="#"
+                            data-url="{{ associated[name] }}">
+                        {{ name }}
+                    </a>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <span class="associated-images notice">None</span>
+        {% endif %}
+    </div>
+    <div id="view"></div>
+    <div id="properties">
+        <h1>Slide properties</h1>
+        {% if properties %}
+            <div id="properties-inner">
+                <dl>
+                {% for name in properties %}
+                    <dt>{{ name }}
+                    <dd>{{ properties[name] }}
+                {% endfor %}
+                </dl>
+            </div>
+        {% else %}
+            <span class="notice">None</span>
+        {% endif %}
+    </div>    
+</body>
+
+
+<script type="text/javascript" src="static/js/jquery.js"></script>
+<script type="text/javascript" src="static/js/openseadragon.js"></script>
+<script type="text/javascript" src="static/js/openseadragon-scalebar.js"></script>
+<script type="text/javascript" src="static/js/openseadragon-mousetracker.js"></script>
+<script type="text/javascript" src="static/js/main.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    var dzi_data = {{ dzi_data|default('{}')|safe }};
+    var viewer = new OpenSeadragon({
+        id: "view",
+        prefixUrl: "static/images/",
+        timeout: 120000,
+        animationTime: 0.5,
+        blendTime: 0.1,
+        constrainDuringPan: true,
+        maxZoomPixelRatio: 2,
+        minZoomLevel: 1,
+        visibilityRatio: 1,
+        zoomPerScroll: 2,
+        showNavigator: true,
+        navigatorPosition: "ABSOLUTE",
+        navigatorTop:      "40px",
+        navigatorLeft:     "4px",
+        navigatorHeight:   "120px",
+        navigatorWidth:    "145px",
+
+        // Show rotation buttons
+        showRotationControl: true,
+        // Enable touch rotation on tactile devices
+        gestureSettingsTouch: {
+            pinchRotate: true
+        },
+
+        gestureSettingsMouse: {
+            
+        },
+    });
+
+    viewer.addHandler("open", function() {
+        // To improve load times, ignore the lowest-resolution Deep Zoom
+        // levels.  This is a hack: we can't configure the minLevel via
+        // OpenSeadragon configuration options when the viewer is created
+        // from DZI XML.
+        viewer.source.minLevel = 8;
+    });
+
+    viewer.scalebar({
+        xOffset: 10,
+        yOffset: 10,
+        barThickness: 3,
+        color: '#555555',
+        fontColor: '#333333',
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    });
+
+    viewer.addHandler('canvas-scroll', function(event) {
+        // console.log(event);
+        // The canvas-click event gives us a position in web coordinates.
+        var webPoint = event.position;
+
+        // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
+        var viewportPoint = viewer.viewport.pointFromPixel(webPoint);
+
+        // Convert from viewport coordinates to image coordinates.
+        var imagePoint = viewer.viewport.viewportToImageCoordinates(viewportPoint);
+
+        var viewportZoom = viewer.viewport.getZoom(webPoint);
+
+        // Show the results.
+        console.log("web-point: "+webPoint.toString(), "viewport-point: "+viewportPoint.toString(), "img-point: "+imagePoint.toString(), "zoom-point: "+viewportZoom);
+
+        zoomNavUpdate(viewportZoom)
+    });
+
+    function open_slide(url, mpp) {
+        var tile_source;
+        if (dzi_data[url]) {
+            // DZI XML provided as template argument (deepzoom_tile.py)
+            tile_source = new OpenSeadragon.DziTileSource(
+                    OpenSeadragon.DziTileSource.prototype.configure(
+                    OpenSeadragon.parseXml(dzi_data[url]), url));
+        } else {
+            // DZI XML fetched from server (deepzoom_server.py)
+            tile_source = url;
+        }
+        viewer.open(tile_source);
+        viewer.scalebar({
+            pixelsPerMeter: mpp ? (1e6 / mpp) : 0,
+        });
+    }
+
+    open_slide("{{ slide_url }}", parseFloat('{{ slide_mpp }}'));
+    $(".load-slide").click(function(ev) {
+        $(".current-slide").removeClass("current-slide");
+        $(this).parent().addClass("current-slide");
+        open_slide($(this).attr('data-url'),
+                parseFloat($(this).attr('data-mpp')));
+        ev.preventDefault();
+    });
+
+    // nav 영역
+    let zoom_area = "<div class='nav_zoom_info_area'>" +
+        "<span class='zoom_value'></span>" +
+        "<span> / 40x </span>"
+        "</div>";
+    $('.openseadragon-container').append(zoom_area)
+});
+</script>
