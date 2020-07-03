@@ -28,7 +28,7 @@ import os
 from optparse import OptionParser
 from threading import Lock
 
-SLIDE_DIR = 'D:\\img_set\\sample_img\\'
+SLIDE_DIR = 'D:\\openslide_sample\\'
 SLIDE_CACHE_SIZE = 10
 DEEPZOOM_FORMAT = 'jpeg'
 DEEPZOOM_TILE_SIZE = 254

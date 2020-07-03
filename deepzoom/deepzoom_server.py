@@ -27,7 +27,7 @@ from optparse import OptionParser
 import re
 from unicodedata import normalize
 
-file_path = 'D:\\img_set\\sample_img\\sample_1.jpg'
+file_path = 'D:\\openslide_sample\\CMU-1-JP2K-33005.svs'
 
 DEEPZOOM_SLIDE = file_path
 DEEPZOOM_FORMAT = 'jpeg'

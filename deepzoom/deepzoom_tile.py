@@ -38,7 +38,7 @@ VIEWER_SLIDE_NAME = 'slide'
 class TileWorker(Process):
     """A child process that generates and writes tiles."""
     
-    SLIDE_DIR = 'D:\\img_set\\sample_img\\'
+    SLIDE_DIR = 'D:\\openslide_sample\\'
 
     def __init__(self, queue, slidepath, tile_size, overlap, limit_bounds,
                 quality):

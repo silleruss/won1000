@@ -3,6 +3,7 @@
 <title>Slide Viewer</title>
 <meta name="viewport" content="user-scalable=no">
 <header>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="static/css/main.css">
 </header>
 <body>
@@ -26,8 +27,9 @@
             <span class="associated-images notice">None</span>
         {% endif %}
     </div>
-    <div id="view"></div>
-    <div id="properties">
+    <div id="view">
+    </div>
+    <!-- <div id="properties">
         <h1>Slide properties</h1>
         {% if properties %}
             <div id="properties-inner">
@@ -41,38 +43,65 @@
         {% else %}
             <span class="notice">None</span>
         {% endif %}
-    </div>    
+    </div> -->
+    <div id="overlay1" style="width:10px; height: 10px;">
+        Click to Toggle Color
+    </div>
+    <!-- <div id="temp_tool_bar">
+        <div id="temp_zoom_in" class="temp_button">
+            <i class="fas fa-search-plus"></i>
+        </div>
+    </div> -->
+    <!-- <select id="shape">
+        <option value="mouse paint">Mouse paint</option>
+        <option value="rect">Recangle</option>
+        <option value="ellipse">Circle</option>
+    </select> Color:
+    <select id="color">
+        <option value="#ff0099">Pink</option>
+        <option value="#f3f313">Yellow</option>
+        <option value="#0dd5fc">Blue</option>
+        <option value="#83f52c">Green</option>
+    </select> -->
 </body>
 
 
-<script type="text/javascript" src="static/js/jquery.js"></script>
-<script type="text/javascript" src="static/js/openseadragon.js"></script>
-<script type="text/javascript" src="static/js/openseadragon-scalebar.js"></script>
-<script type="text/javascript" src="static/js/openseadragon-mousetracker.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://rawgit.com/fabiovalse/Hub/master/lib/openseadragon/openseadragon.min.js"></script>
+<script type="text/javascript" src="static/js/openseadragon/openseadragon-scalebar.js"></script>
+<script type="text/javascript" src="static/js/openseadragon/openseadragon-mousetracker.js"></script>
+<script type="text/javascript" src="static/js/openseadragon/openseadragon-svg-overlay.js"></script>
+<!-- <script src="//unpkg.com/openseadragon-annotations@1.0.5/dist/openseadragon-annotations.js"></script> -->
+<script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script> -->
 <script type="text/javascript" src="static/js/main.js"></script>
 <script type="text/javascript">
 $(document).ready(function() {
     var dzi_data = {{ dzi_data|default('{}')|safe }};
     var viewer = new OpenSeadragon({
         id: "view",
-        prefixUrl: "static/images/",
+        // prefixUrl: "//static/images/",
+        prefixUrl: "//openseadragon.github.io/openseadragon/images/",
         timeout: 120000,
         animationTime: 0.5,
         blendTime: 0.1,
         constrainDuringPan: true,
-        maxZoomPixelRatio: 2,
+        maxZoomPixelRatio: 2.7, // zoom-point - 40
         minZoomLevel: 1,
         visibilityRatio: 1,
         zoomPerScroll: 2,
         showNavigator: true,
+        // zoomInButton: "temp_zoom_in",
+        wrapHorizontal: false,
+        wrapVertical: false,
         navigatorPosition: "ABSOLUTE",
         navigatorTop:      "40px",
         navigatorLeft:     "4px",
         navigatorHeight:   "120px",
         navigatorWidth:    "145px",
-
         // Show rotation buttons
         showRotationControl: true,
+        showFlipControl: true,
         // Enable touch rotation on tactile devices
         gestureSettingsTouch: {
             pinchRotate: true
@@ -81,7 +110,84 @@ $(document).ready(function() {
         gestureSettingsMouse: {
             
         },
+
+        overlays: [
+            {
+                id: 'overlay1',
+                x: 22.2,
+                y: 22.2,
+                className: 'highlight'
+            }
+        ],
+
+        addButton: function(button) {
+            this.buttons.push(button);
+            this.element.appendChild(button.element);
+        }
     });
+    viewer.scalebar({
+        minWidth: "75px",
+        location: OpenSeadragon.ScalebarLocation.BOTTOM_LEFT,
+        xOffset: 10,
+        yOffset: 10,
+        stayInsideImage: true,
+        color: "rgb(150, 150, 150)",
+        fontColor: "rgb(100, 100, 100)",
+        backgroundColor: "rgba(255, 255, 255, 0.5)",
+        fontSize: "small",
+        barThickness: 3
+    });
+
+    // viewer.initializeAnnotations(); // annotations library init
+
+    var svg_overlay = viewer.svgOverlay();  // svg
+    var svg_node = svg_overlay.node();  // svg node
+
+    // viewer.setMouseNavEnabled(true);
+  
+
+    $("#overlay1").click(function (e) {
+        alert("test");
+        var $target = $(e.originalEvent.target);
+        if ($target.is('p')) {
+            if ($target.attr('target') === '_blank') {
+                    
+            } else {
+                    
+            }
+        } else {
+            $('#overlay1').toggleClass('selected');
+        }        
+    });
+    
+    let customDrawFreeShapeButton = new OpenSeadragon.Button({
+        tooltip: 'Draw FreeShape Button',
+        srcRest: 'https://raw.githubusercontent.com/openseadragon/openseadragon/master/images/button_rest.png',
+        srcGroup: 'https://raw.githubusercontent.com/openseadragon/openseadragon/master/images/button_grouphover.png',
+        srcHover: 'https://raw.githubusercontent.com/openseadragon/openseadragon/master/images/button_hover.png',
+        srcDown: 'https://raw.githubusercontent.com/openseadragon/openseadragon/master/images/button_pressed.png',
+        onClick: customFreeShapeButtonClicked    // function
+    });
+    addCustomButton(viewer, customDrawFreeShapeButton);
+
+    let customDrawCircleButton = new OpenSeadragon.Button({
+        tooltip: 'Draw Dot Button',
+        srcRest: 'https://raw.githubusercontent.com/openseadragon/openseadragon/master/images/button_rest.png',
+        srcGroup: 'https://raw.githubusercontent.com/openseadragon/openseadragon/master/images/button_grouphover.png',
+        srcHover: 'https://raw.githubusercontent.com/openseadragon/openseadragon/master/images/button_hover.png',
+        srcDown: 'https://raw.githubusercontent.com/openseadragon/openseadragon/master/images/button_pressed.png',
+        onClick: customButtonCircleClicked    // function
+    });
+    addCustomButton(viewer, customDrawCircleButton);
+      
+    var custom_free_shape_button_checker = false;
+    
+    var svg_tracker = new OpenSeadragon.MouseTracker({
+        element: viewer.canvas,
+        clickHandler: mouseClickHandle,
+        dragHandler: mouseDragHandle,
+        dragEndHandler: mouseDragEndHandle,
+    }).setTracking(true);
 
     viewer.addHandler("open", function() {
         // To improve load times, ignore the lowest-resolution Deep Zoom
@@ -89,38 +195,129 @@ $(document).ready(function() {
         // OpenSeadragon configuration options when the viewer is created
         // from DZI XML.
         viewer.source.minLevel = 8;
+
+        // openseadragon-canvas
+        svg_overlay._svg.id = 'wonSvg';
+        // console.log(svg_overlay);
+
+
+        // svgSetting(svg_overlay);
     });
 
-    viewer.scalebar({
-        xOffset: 10,
-        yOffset: 10,
-        barThickness: 3,
-        color: '#555555',
-        fontColor: '#333333',
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    });
 
     viewer.addHandler('canvas-scroll', function(event) {
         // console.log(event);
         // The canvas-click event gives us a position in web coordinates.
-        var webPoint = event.position;
-
+        let webPoint = event.position;
         // Convert that to viewport coordinates, the lingua franca of OpenSeadragon coordinates.
-        var viewportPoint = viewer.viewport.pointFromPixel(webPoint);
-
+        let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
         // Convert from viewport coordinates to image coordinates.
-        var imagePoint = viewer.viewport.viewportToImageCoordinates(viewportPoint);
+        let imagePoint = viewer.viewport.viewportToImageCoordinates(viewportPoint);
+        let viewportZoom = viewer.viewport.getZoom(webPoint);
 
-        var viewportZoom = viewer.viewport.getZoom(webPoint);
+        let elem = "<div id='temp12'>Temp12</div>"
+        // viewer.navigator.addOverlay({
+        //     element : elem, 
+        //     location: viewportPoint,
+        //     placement: '',
+        //     onDraw: navDraw
+        // });
+        
 
         // Show the results.
         console.log("web-point: "+webPoint.toString(), "viewport-point: "+viewportPoint.toString(), "img-point: "+imagePoint.toString(), "zoom-point: "+viewportZoom);
-
-        zoomNavUpdate(viewportZoom)
     });
 
+    viewer.addHandler('canvas-click', function(event) {
+        console.log("canvas clicked");
+    });
+
+    viewer.addHandler('canvas-drag', function(event) {
+        let webPoint = event.position;
+        let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
+
+        // drawing line
+        // svgDrawingLine(svg_overlay) 
+    });
+
+    function customFreeShapeButtonClicked() {
+        custom_free_shape_button_checker = true;
+        viewer.setMouseNavEnabled(false);
+        // d3.select(svg_node).append("line")
+        //     .attr("")
+
+        // viewer.addHandler('canvas-drag', function(event) {
+        //     let webPoint = event.position;
+        //     let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
+        //     console.log(event);
+        // });
+
+    }
+
+    var custom_circle_button_checker = false;
+
+    function customButtonCircleClicked() {
+        custom_circle_button_checker = true;
+        viewer.setMouseNavEnabled(false);
+    }
+    
+    viewer.addHandler('canvas-nonprimary-press', function(event) {
+        const webPoint = event.position;
+		const viewportPoint = viewer.viewport.pointFromPixel(webPoint);
+
+		displayPinIcon(viewportPoint);
+    });
+    
+    // mouseTracker event
+    function mouseClickHandle(e) {
+        if(custom_free_shape_button_checker) {
+            console.log("clicked");
+            let target = e;
+            console.log(target);
+            // custom_free_shape_button_checker = false;
+        } else {
+            
+        }
+        
+    }
+
+    function mouseDragHandle(e) {
+        // console.log(e);
+        if(custom_free_shape_button_checker) {
+            // custom_free_shape_button_checker = false;
+            svgDrawingFreeShape(svg_node);
+        } else if(custom_circle_button_checker) {
+            let points = e.position;
+            svgDrawCircle(svg_node, points, dotDataSet)
+        } else {
+
+        }
+        // let target = e.position;
+        // console.log(target);
+    }
+
+    function mouseDragEndHandle(e) {
+        if(custom_free_shape_button_checker) {
+            let target = e.position;
+            custom_free_shape_button_checker = false;
+        } else if(custom_circle_button_checker) {
+            let points = e.position;
+            svgDrawCircle(svg_node, points, dotDataSet)
+            custom_circle_button_checker = false;
+        } else {
+
+        }
+
+        console.log("drag end");
+        viewer.setMouseNavEnabled(true);
+    }
+
+    function navDraw() {
+        console.log('navigation draw function call');
+    }
+
     function open_slide(url, mpp) {
-        var tile_source;
+        let tile_source;
         if (dzi_data[url]) {
             // DZI XML provided as template argument (deepzoom_tile.py)
             tile_source = new OpenSeadragon.DziTileSource(
@@ -144,12 +341,7 @@ $(document).ready(function() {
                 parseFloat($(this).attr('data-mpp')));
         ev.preventDefault();
     });
-
-    // nav 영역
-    let zoom_area = "<div class='nav_zoom_info_area'>" +
-        "<span class='zoom_value'></span>" +
-        "<span> / 40x </span>"
-        "</div>";
-    $('.openseadragon-container').append(zoom_area)
+    
 });
+
 </script>
