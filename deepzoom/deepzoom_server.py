@@ -143,8 +143,8 @@ if __name__ == '__main__':
                 default='127.0.0.1',
                 help='address to listen on [127.0.0.1]')
     parser.add_option('-p', '--port', metavar='PORT', dest='port',
-                type='int', default=5000,
-                help='port to listen on [5000]')
+                type='int', default=5001,
+                help='port to listen on [5001]')
     parser.add_option('-Q', '--quality', metavar='QUALITY',
                 dest='DEEPZOOM_TILE_QUALITY', type='int',
                 help='JPEG compression quality [75]')
@@ -168,4 +168,4 @@ if __name__ == '__main__':
         if app.config['DEEPZOOM_SLIDE'] is None:
             parser.error('No slide file specified')
 
-    app.run(host=opts.host, port=opts.port, threaded=True)
+    app.run(host=opts.host, port=opts.port, threaded=True, debug=True)

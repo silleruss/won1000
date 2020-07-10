@@ -2,22 +2,7 @@
     
 });
 
-function svgDrawingFreeShape(svg_node) {
-    
-}
-
-function svgDrawCircle(svg_node, points, dotDataSet) {
-    
-}
-
-function testDrawLine(svg_node) {
-
-}
-
-
 // click pin draw event
-
-    
 function displayPinIcon(point, item) {
     let href = '/sitemaps/edit-pin/' + 'siteId';
     if (item) {
@@ -66,25 +51,6 @@ function displayPinOverlay(href, webPointX, webPointY, viewportPoint) {
 
 // button push on toolbar
 function addCustomButton(viewer, customButton) {
-    console.log(viewer);
     viewer.buttons.buttons.push(customButton);
     viewer.buttons.element.appendChild(customButton.element);
 }
-
-// button click event
-// function customButtonClicked(viewer, svg_node) {
-//     console.log(viewer);
-//     // d3.select(svg_node).append("line")
-//     //     .attr("")
-
-//     let mouseTracker = new OpenSeadragon.MouseTracker({
-//         element: viewer.container,
-//         dragHandler: function (event) {
-//             console.log(event);
-//         },
-//         enterHandler: function (event) {
-//             console.log(event);
-//         }
-//     });
-// }
-

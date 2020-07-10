@@ -55,6 +55,7 @@
         });
 
         this._viewer.addHandler('resize', function() {
+            console.log("resize: "+self);
             self.resize();
         });
 
@@ -87,6 +88,9 @@
             var scale = this._viewer.viewport._containerInnerSize.x * zoom;
             this._node.setAttribute('transform',
                 'translate(' + p.x + ',' + p.y + ') scale(' + scale + ') rotate(' + rotation + ')');
+
+            // something check for this
+            
         },
 
         // ----------

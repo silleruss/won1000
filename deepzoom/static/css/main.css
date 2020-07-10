@@ -123,3 +123,26 @@ rect {
     height: 10px;
     background-color: #f88;
 }
+
+
+
+/* draw */
+.line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.svg_line:hover {
+    stroke: #ec008c;
+    opacity: 1;
+}
+
+circle {
+    fill: lightgreen;
+    stroke: green;
+    stroke-width: 2px;
+    fill-opacity: 0.5;
+}
