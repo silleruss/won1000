@@ -114,7 +114,8 @@ $(document).ready(function() {
         },
 
         gestureSettingsMouse: {
-            
+            clickToZoom: false,
+            dblClickToZoom: true
         },
 
         overlays: [
@@ -148,6 +149,7 @@ $(document).ready(function() {
 
     var svg_overlay = viewer.svgOverlay();  // svg
     var svg_node = svg_overlay.node();  // svg > g
+    var d3_svg = d3.select("svg");
 
     // viewer.setMouseNavEnabled(true);
   
@@ -190,11 +192,12 @@ $(document).ready(function() {
     
     var svg_tracker = new OpenSeadragon.MouseTracker({
         element: viewer.canvas,
-        // clickHandler: mouseClickHandle,
+        clickHandler: mouseClickHandle,
         dragHandler: mouseDragHandle,
         dragEndHandler: mouseDragEndHandle,
         moveHandler: mouseMoveHandle,
-        scrollHandler: mouseScrollHandle
+        scrollHandler: mouseScrollHandle,
+        keyDownHandler: keyDownhandle
     }).setTracking(true);
 
     viewer.addHandler("open", function() {
@@ -203,55 +206,45 @@ $(document).ready(function() {
         // OpenSeadragon configuration options when the viewer is created
         // from DZI XML.
         viewer.source.minLevel = 8;
-
         // openseadragon-canvas
-        svg_overlay._svg.id = 'wonSvg';
-        // console.log(svg_overlay);
-
+        svg_overlay._svg.id = 'wonSvg'; // svg_overlay._svg -> svg object
     });
 
 
     viewer.addHandler('canvas-scroll', function(event) {
-        // let webPoint = event.position;
-        // let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
-        // let imagePoint = viewer.viewport.viewportToImageCoordinates(viewportPoint);
-        // let viewportZoom = viewer.viewport.getZoom(webPoint);
-
-        // viewer.navigator.addOverlay({
-        //     element : elem, 
-        //     location: viewportPoint,
-        //     placement: '',
-        //     onDraw: navDraw
-        // });
-
-        // Show the results.
-        // console.log("web-point: "+webPoint.toString(), "viewport-point: "+viewportPoint.toString(), "img-point: "+imagePoint.toString(), "zoom-point: "+viewportZoom);
     });
-
     viewer.addHandler('canvas-click', function(event) {
-        
-
-
     });
-
     viewer.addHandler('canvas-drag', function(event) {
-        let webPoint = event.position;
-        let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
-
-        // drawing line
-        // svgDrawingLine(svg_overlay) 
+    });
+    viewer.addHandler('canvas-key', function(event) {
+        console.log(event);
     });
 
-    // variables about draw event
+    // draw event variables
+    var custom_circle_button_checker = false;
     var button_toggle_checker = false;
+    var anno_focus_checker = false;
+
     var linearr = [];
     var points_cnt;
     var lineArea;
     var textArea;
-    var nameCnt = 0;
+    var line;
 
+    var freehand_dragged_point = [];
+    var rightMostX, rightMostY;
+    var pointRadius = 0.009;
+
+    var nameCnt = 0;
+    var id_name = "freeDraw_" + nameCnt++;
+
+    // drawed area variables
     var circleArea;
     var current_g;
+
+    var focus_anno;
+    var current_input_key_code;
 
     function customFreeShapeButtonClicked() {
         if(!custom_free_shape_button_checker) {
@@ -282,17 +275,12 @@ $(document).ready(function() {
         
     }
 
-    var custom_circle_button_checker = false;
 
     function customButtonCircleClicked() {
         custom_circle_button_checker = true;
         viewer.setMouseNavEnabled(false);
     }
 
-    // draw variable
-    var line;
-    var freehand_dragged_point = [];
-    var rightMostX, rightMostY;
 
     viewer.addHandler('canvas-nonprimary-press', function(event) {
         const webPoint = event.position;
@@ -305,38 +293,55 @@ $(document).ready(function() {
     function mouseClickHandle(e) {
         // circle 클릭시, drag transform event 필요
         if(custom_free_shape_button_checker) {
-            console.log(svg_overlay);
-            let target = e;
-            console.log(target);
             // custom_free_shape_button_checker = false;
         } else if(custom_circle_button_checker) {
             let points = e.position;
         } else {
             
         }
+
+        if(e.quick) {   // 한번 클릭 시(not a drag)
+            let target = e.originalEvent.target.nodeName;
+            let clicked_elem = e.originalEvent.path[1]; // clicked g tag
+            
+            if(target == "svg") {
+                // 클릭한 element가 annotation이 아닐경우 edge points 숨김
+                $(clicked_elem).find("circle").addClass("hide");
+                focus_anno = null;
+                anno_focus_checker = false;
+            } else if(target == "path" && anno_focus_checker == false) {
+                // 클릭한 element가 annotation일 경우 edge points 노출
+                $(clicked_elem).find("circle").removeClass("hide");
+                focus_anno = clicked_elem;
+                anno_focus_checker = true;
+            }
+        }
+        
         
     }
 
-    d3.select('circle').each(function () {
-        return svg_overlay.onClick(this, function() {
-            return console.log('click', arguments);
-        });
-    });
-    
+
     // need to optimize
     var renderPath = d3.line()
         .x(function (d) { return d[0]; })
         .y(function (d) { return d[1]; })
 
-    var pointRadius = 0.001;
 
     function mouseDragHandle(e) {
-        // console.log(e);
+        let points = viewer.viewport.pointFromPixel(e.position);
+        let viewportZoom = viewer.viewport.getZoom(true);
+
         if(custom_free_shape_button_checker) {
+            // 그리는 중 cancel
+            if(current_input_key_code == 27) {
+                console.log("called");
+                custom_free_shape_button_checker = false;
+                lineArea = null;
+                linearr = [];   // reset
+            }
             // have to loose coordinates who pushed at arr
             // 단순히 movemove에 대한 cnt가 아닌 mousedrag time등을 이용해야
-            if((points_cnt % 12) == 0) {
-                let points = viewer.viewport.pointFromPixel(e.position);
+            if((points_cnt % 10) == 0) {
                 // let last_val = linearr[linearr.length-1];
                 // console.log("last - "+last_val);
                 // console.log("current - "+points.x+" , "+points.y);
@@ -354,14 +359,15 @@ $(document).ready(function() {
                 current_g.append("circle")
                     .attr("cx", points.x)
                     .attr("cy", points.y)
-                    .attr("r", pointRadius)
+                    .attr("r", pointRadius / viewportZoom)
                     .attr("start-point", true)
-                    .attr("id", "gget")
+                    .attr("class", "hide")
                     .classed("handle", true)
                     .style("cursor", "pointer")
                     .attr("vector-effect", "non-scaling-stroke");
                 
-                console.log("rightMostX: "+rightMostX);
+                // console.log("rightMostX: "+rightMostX);
+
             } else {
                 
             }
@@ -373,12 +379,12 @@ $(document).ready(function() {
         } else {
             
         }
+
     }
 
     function mouseDragEndHandle(e) {
         // drag-end 시, 해당 area에 text or div 추가
         if(custom_free_shape_button_checker) {
-            let id_name = "freeDraw_" + nameCnt++;
             console.log(linearr.length);
             // free draw closepath
             lineArea.attr("d", lineArea.attr("d") + "Z");
@@ -395,20 +401,20 @@ $(document).ready(function() {
                     .attr("vector-effect", "non-scaling-stroke")
                     .text(id_name + "_text");
 
-            let temp = [];
-            for(let i=0; i<linearr.length; i++) {
-                if((i % 2) == 0) {
-                    temp.push(linearr[i]);
-                }
-            }
-            console.log(temp);
+            // let temp = [];
+            // for(let i=0; i<linearr.length; i++) {
+            //     if((i % 2) == 0) {
+            //         temp.push(linearr[i]);
+            //     }
+            // }
+            // console.log(temp);
 
             custom_free_shape_button_checker = false;
             linearr = [];   // reset
             rightMostX = 0;
             rightMostY = 0;
 
-            
+            d3_svg.selectAll('circle').call(drag);
         } else if(custom_circle_button_checker) {
             custom_circle_button_checker = false;
         } else {
@@ -424,30 +430,47 @@ $(document).ready(function() {
     }
 
     function mouseScrollHandle(e) {
-        let webPoint = e.position;
-        // let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
-        // let imagePoint = viewer.viewport.viewportToImageCoordinates(viewportPoint);
-        let viewportZoom = viewer.viewport.getZoom(webPoint);
-        console.log(viewportZoom);
-        let temp_divide = viewportZoom;
-        // 1. compare prev zoom lv, curr zoom lv
-        // 2. mousetracker event zoom up down
-        let prev_zoom_lv;
-        let curr_zoom_lv;
-        let temp_size = pointRadius / temp_divide;
-        d3.selectAll('circle').attr("r", temp_size);
 
-        // 1. zoom level 따라서 circle radius divide
-        // 2. overlay 
-        // 3. translate
-
-        // d3.selectAll('#added_g')
-        //     .attr('transform', 'translate(' + p.x + ',' + p.y + ') scale(' + scale + ')');
-
-
-        // let graph = d3.select('g').seletAll('g')
-        //             .attr("transform", "translate(");
     }
+
+    function keyDownhandle(e) {
+        current_input_key_code = e.keyCode;
+        if(e.keyCode == 46) {   // delete
+            $(focus_anno).remove();
+        }
+    }
+
+    // edge point move event
+    let drag = d3.drag()
+        .on('start', dragstarted)
+        .on('drag', dragged)
+        .on('end', dragended);
+
+    function dragstarted(d) {
+        console.log(d);
+        d3.select(this).raise().classed('active', true);
+    }
+
+    function dragged(d) {
+        console.log(d);
+        d[0] = x.invert(d3.event.x);
+        d[1] = y.invert(d3.event.y);
+        d3.select(this)
+            .attr('cx', x(d[0]))
+            .attr('cy', y(d[1]))
+        focus.select('path').attr('d', line);
+    }
+
+    function dragended(d) {
+        console.log(d);
+        d3.select(this).classed('active', false);
+    }
+    
+    d3.select('circle').each(function () {
+        return svg_overlay.onClick(this, function() {
+            return console.log('click', arguments);
+        });
+    });
 
     $(".svg_line").click(function(e) {
         console.log(e);

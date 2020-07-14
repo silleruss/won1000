@@ -141,8 +141,12 @@ rect {
 }
 
 circle {
-    fill: lightgreen;
+    fill: green;
     stroke: green;
     stroke-width: 2px;
-    fill-opacity: 0.5;
+    fill-opacity: 0.01;
+}
+
+.hide {
+    display: none;
 }

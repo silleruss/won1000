@@ -90,7 +90,22 @@
                 'translate(' + p.x + ',' + p.y + ') scale(' + scale + ') rotate(' + rotation + ')');
 
             // something check for this
+            // console.log(this);
+            // 그려진 annotation의 circle 크기 resize
+            var pointRadius = 0.009 / zoom; // 0.009 크기 global variable 필요
+            var svg_childList = this._svg.firstChild.childNodes;
             
+            if(svg_childList.length > 0) {  // anno array가 있을경우
+                svg_childList.forEach(function(item) {
+                    let anno_circle = item.getElementsByTagName('circle');
+                    for (let circle of anno_circle) {
+                        circle.setAttribute('r', pointRadius);
+                    }
+                    
+                    // console.log(item.getElementsByTagName('text'));
+                });
+            } 
+
         },
 
         // ----------
